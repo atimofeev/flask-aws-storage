@@ -8,17 +8,20 @@ phases:
       - CODEBUILD_RESOLVED_SOURCE_VERSION="${CODEBUILD_RESOLVED_SOURCE_VERSION:-$IMAGE_TAG}"
       - IMAGE_TAG=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
       - IMAGE_URI="$REPO_URL:$IMAGE_TAG"
+      - LATEST_IMAGE_URI="$REPO_URL:latest"
   build:
     commands:
       - echo Build started on `date`
       - echo Building the Docker image...
       - docker build -t $IMAGE_URI .
+      - docker tag $IMAGE_URI $LATEST_IMAGE_URI
   post_build:
     commands:
       - bash -c "if [ /"$CODEBUILD_BUILD_SUCCEEDING/" == /"0/" ]; then exit 1; fi"
       - echo Build stage successfully completed on `date`
-      - echo Pushing the Docker image...
+      - echo Pushing the Docker images...
       - docker push $IMAGE_URI
+      - docker push $LATEST_IMAGE_URI
       - printf '[{"name":"flask","imageUri":"%s"}]' "$IMAGE_URI" > images.json
 artifacts:
   files: images.json
